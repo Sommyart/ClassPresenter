@@ -1,0 +1,13 @@
+{
+  "name": "classpresenter",
+  "version": "2.0.0",
+  "private": true,
+  "description": "ClassPresenter browser app and optional Electron desktop wrapper",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "desktop": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^32.1.2"
+  }
+}

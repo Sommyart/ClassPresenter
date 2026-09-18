@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: transparent; font-family: "DM Mono", Consolas, monospace; user-select: none; }
+    .timer { -webkit-app-region: drag; display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; color: white; background: rgba(18,21,33,.92); box-shadow: 0 9px 25px rgba(0,0,0,.3); }
+    strong { display: block; font-size: 25px; letter-spacing: -1px; }
+    small { display: block; margin-top: 4px; color: #adb3ca; font: 700 9px Manrope, sans-serif; letter-spacing: 1px; }
+    button { -webkit-app-region: no-drag; border: 0; background: transparent; color: #c7cce0; font-size: 18px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="timer"><div><strong id="display">05:00</strong><small>DESKTOP OVERLAY</small></div><button id="close" aria-label="Close timer">×</button></div>
+  <script>
+    document.getElementById("close").addEventListener("click", () => window.close());
+  </script>
+</body>
+</html>

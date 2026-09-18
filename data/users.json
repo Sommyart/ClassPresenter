@@ -1,0 +1,10 @@
+[
+  {
+    "id": "f51c1632-3d79-4790-af4e-5cf25875aacb",
+    "name": "Smoke User",
+    "email": "smoke-902983ed156a418799a654d9a2ad0d54@example.com",
+    "passwordHash": "fd7407b797a6f0a45a4a945ba40fda3b:ebd3da4116577bbc9691f7083c332e97c089fd0bf23ceac995d112110bf3715698c74a34ac66d456a1673892b2c568bba7b4a2223c17b8fc46870108b9c72c7c",
+    "plan": "free",
+    "createdAt": "2026-09-18T09:24:26.263Z"
+  }
+]

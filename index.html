@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f9fc" />
+    <title>ClassPresenter</title>
+    <link rel="preconnect" href="https://esm.sh" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="intro-splash" class="intro-splash"><div class="splash-mark"><i></i><i></i><i></i></div><h1>CLASS PRESENTER</h1><p>Developed by Sommyart Imagery</p></div>
+    <main id="app" class="app-shell">
+      <section id="landing-view" class="view landing-view hidden">
+        <nav class="topbar landing-topbar"><a class="brand" href="#"><span class="brand-mark"><i></i><i></i><i></i></span><span>Class<span>Presenter</span></span></a><div class="landing-nav"><a href="#how-it-works">How it works</a><a href="#use-cases">Use cases</a><button id="landing-login" class="text-button">Log in</button><button id="landing-signup" class="primary-button">Start presenting</button></div></nav>
+        <header class="hero"><div class="hero-copy"><p class="eyebrow">A CLEARER WAY TO PRESENT</p><h1>Present with confidence.<br /><em>Keep your time in sight.</em></h1><p>Upload your slides, set your pace, and keep a calm, readable timer visible while you teach, train, or lead.</p><div class="hero-actions"><button id="hero-start" class="primary-button">Start presenting <span>→</span></button><a href="#how-it-works" class="secondary-link">See how it works <span>↓</span></a></div><div class="hero-proof"><span>✓</span> Built for focused sessions <span>·</span> <span>✓</span> Works with PowerPoint</div></div><div class="hero-visual"><div class="hero-window"><div class="window-bar"><span></span><span></span><span></span></div><div class="mock-slide"><small>CLASS PRESENTER</small><strong>Make every<br />minute count.</strong><div class="mock-lines"></div></div><div class="mock-timer">09:42<small>LIVE · COUNTDOWN</small></div></div></div></header>
+        <section id="how-it-works" class="marketing-section"><p class="eyebrow">HOW IT WORKS</p><h2>From upload to first slide<br /><span>in a few calm steps.</span></h2><div class="steps"><article><b>01</b><h3>Upload your presentation</h3><p>Keep your existing PowerPoint workflow. Your slides stay yours.</p></article><article><b>02</b><h3>Set your timer</h3><p>Choose a countdown or count-up pace with warnings that fit your session.</p></article><article><b>03</b><h3>Start presenting</h3><p>Focus on your audience while your time stays visible and independent.</p></article></div></section>
+        <section id="use-cases" class="use-case-section"><div><p class="eyebrow">MADE FOR REAL ROOMS</p><h2>One simple tool.<br /><span>Many ways to teach.</span></h2></div><div class="use-case-list"><span>Teachers</span><span>Lecturers</span><span>Trainers</span><span>Workshop facilitators</span><span>Church teachers</span><span>Coaches</span><span>Professional presenters</span></div></section>
+        <section id="pricing" class="pricing-section"><p class="eyebrow">SIMPLE PLANS</p><h2>Start focused. Grow when ready.</h2><div class="pricing-grid"><article><small>FREE</small><h3>Start presenting</h3><p>For trying the essentials.</p><ul><li>5 presentations</li><li>3 timer presets</li><li>Presentation sessions</li></ul><button class="secondary-button plan-action" data-plan="free">Get started</button></article><article class="featured-plan"><small>PRO</small><h3>For individuals</h3><p>For teachers and presenters.</p><ul><li>Unlimited presentations</li><li>Presenter View and themes</li><li>Advanced warnings</li></ul><button class="primary-button plan-action" data-plan="pro">Choose Pro</button></article><article><small>TEAM</small><h3>For organizations</h3><p>For schools and teams.</p><ul><li>Shared team library</li><li>Roles and permissions</li><li>Team analytics</li></ul><button class="secondary-button plan-action" data-plan="team">Choose Team</button></article></div></section>
+        <footer class="landing-footer"><span>ClassPresenter</span><span>Present with intention.</span></footer>
+      </section>
+
+      <section id="auth-view" class="view auth-view hidden"></section>
+
+      <section id="dashboard-view" class="view dashboard-view">
+        <nav class="topbar">
+          <a class="brand" href="#" aria-label="ClassPresenter home">
+            <span class="brand-mark"><i></i><i></i><i></i></span>
+            <span>Class<span>Presenter</span></span>
+          </a>
+          <div class="topbar-actions">
+            <span class="status-pill"><span class="status-dot"></span>Local workspace</span>
+            <span class="desktop-badge">Focused presentation workspace</span>
+          </div>
+        </nav>
+
+        <div class="dashboard-content">
+          <header class="page-heading">
+            <div>
+              <p class="eyebrow">PRESENTATION STUDIO</p>
+              <h1>Good morning, Alex<span class="heading-dot">.</span></h1>
+              <p class="heading-subtitle">Keep your timing on track, from first slide to last.</p>
+            </div>
+            <div class="upload-actions"><button class="primary-button" id="upload-button"><span class="plus">+</span> Upload presentation</button><button class="secondary-button import-link-button" id="import-link-button">Import link</button></div>
+            <input id="file-input" type="file" accept=".pptx,.pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf" hidden />
+          </header>
+
+          <section class="stats-row" aria-label="Workspace overview">
+            <article class="stat-card"><span class="stat-icon purple">▤</span><div><strong id="presentation-count">0</strong><span>Presentations</span></div><small>In your library</small></article>
+            <article class="stat-card"><span class="stat-icon blue">◷</span><div><strong>∞</strong><span>Focus time</span></div><small>Keep presenting</small></article>
+            <article class="stat-card"><span class="stat-icon orange">↗</span><div><strong>100%</strong><span>On your terms</span></div><small>No distractions</small></article>
+          </section>
+          <section class="library-section">
+            <div class="section-heading"><div><h2>Your presentations</h2><p>Upload a deck to start your next focused session.</p></div><div class="library-tools"><label class="search-box">⌕ <input id="library-search" type="search" placeholder="Search presentations" /></label><select id="sort-select" class="sort-select" aria-label="Sort presentations"><option value="added">Recently added</option><option value="presented">Recently presented</option><option value="alphabetical">Alphabetical</option></select><button class="text-button" id="preset-manager-button">Timer presets</button></div></div>
+            <div id="library-grid" class="library-grid" aria-live="polite"></div>
+            <div id="empty-state" class="empty-state">
+              <div class="empty-icon">↥</div>
+              <h3>Your library is ready</h3>
+              <p>Upload a PowerPoint or PDF file, or import a public Slides/Canva link.</p>
+              <button class="secondary-button" id="empty-upload-button">Choose a presentation</button>
+            </div>
+          </section>
+        </div>
+        <footer class="footer"><span>ClassPresenter</span><span>Built for better sessions</span></footer>
+      </section>
+
+      <section id="setup-view" class="view setup-view hidden">
+        <nav class="topbar setup-topbar"><button class="back-button" id="back-to-dashboard">← <span>Library</span></button><div class="brand compact"><span class="brand-mark"><i></i><i></i><i></i></span><span>Class<span>Presenter</span></span></div><span class="setup-step">01 <b>/</b> 02</span></nav>
+        <div class="setup-content">
+          <div class="setup-intro"><p class="eyebrow">GET READY TO PRESENT</p><h1>Set your pace.</h1><p>Configure your timer before you enter presentation mode. Your timer will begin only when you start.</p></div>
+          <div class="setup-layout">
+            <section class="setup-card timer-settings">
+              <div class="card-title"><div><span class="step-label">01</span><h2>Timer settings</h2></div><span class="independent-badge">Independent timer</span></div>
+              <div class="mode-toggle" role="tablist"><button class="mode-button active" data-mode="countdown" role="tab">Countdown</button><button class="mode-button" data-mode="countup" role="tab">Count up</button></div>
+              <div id="countdown-options">
+                <label class="field-label">Duration</label>
+                <div class="duration-presets">
+                  <button data-seconds="60">1 min</button><button data-seconds="300" class="selected">5 min</button><button data-seconds="600">10 min</button><button data-seconds="900">15 min</button><button data-seconds="1800">30 min</button><button data-seconds="3600">1 hour</button>
+                </div>
+                <label class="field-label custom-label" for="custom-duration">Custom duration <span>HH : MM : SS</span></label>
+                <input id="custom-duration" class="duration-input" type="text" inputmode="numeric" value="00:05:00" pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}" />
+              </div>
+              <div id="countup-options" class="countup-note hidden"><span class="countup-icon">↑</span><div><strong>Open-ended timing</strong><p>The timer will start at 00:00:00 and continue until you pause or reset it.</p></div></div>
+            </section>
+            <section class="setup-card appearance-settings">
+              <div class="card-title"><div><span class="step-label">02</span><h2>Appearance</h2></div></div>
+              <label class="field-label">Timer position</label>
+              <div class="position-grid">
+                <button class="position-option selected" data-position="top-right"><i></i><span>Top right</span></button><button class="position-option" data-position="top-left"><i></i><span>Top left</span></button><button class="position-option" data-position="top-center"><i></i><span>Top center</span></button><button class="position-option" data-position="bottom-right"><i></i><span>Bottom right</span></button><button class="position-option" data-position="bottom-left"><i></i><span>Bottom left</span></button><button class="position-option" data-position="bottom-center"><i></i><span>Bottom center</span></button>
+              </div>
+              <div class="preview-strip"><span class="mini-timer">05:00</span><span>Timer preview</span></div>
+            </section>
+          </div>
+          <section class="advanced-settings setup-card">
+            <div class="card-title"><div><span class="step-label">03</span><h2>Presentation options</h2></div><span class="independent-badge">Phase 2</span></div>
+            <div class="advanced-grid">
+              <label class="check-row"><input id="presenter-view-option" type="checkbox" /> <span><strong>Presenter View</strong><small>See next slide, elapsed time, and controls on your screen.</small></span></label>
+              <label class="field-label theme-field">Timer display<select id="timer-display-mode"><option value="global">Global timer</option><option value="slide">Slide timer</option><option value="both">Both timers</option><option value="none">None</option></select></label>
+              <label class="field-label theme-field">Timer theme<select id="theme-select"><option value="minimal">Minimal</option><option value="digital">Digital</option><option value="compact">Compact</option></select></label>
+              <label class="field-label">Timer opacity<input id="opacity-range" type="range" min="55" max="100" value="92" /></label>
+              <label class="check-row"><input id="auto-advance-option" type="checkbox" /> <span><strong>Auto Advance Slides</strong><small>Advance only when an enabled slide timer reaches zero.</small></span></label>
+            </div>
+            <div class="warning-settings"><div><label class="field-label">Countdown warnings</label><div class="warning-chips"><label><input type="checkbox" value="1800" checked /> 30 min</label><label><input type="checkbox" value="600" checked /> 10 min</label><label><input type="checkbox" value="300" checked /> 5 min</label><label><input type="checkbox" value="60" checked /> 1 min</label><label><input type="checkbox" value="10" checked /> Last 10 sec</label><label><input type="checkbox" value="5" checked /> 5 sec</label></div></div><label class="check-row sound-row"><input id="warning-sound" type="checkbox" /> <span><strong>Sound</strong><small>Subtle warning tone</small></span></label></div>
+            <div class="slide-editor-heading"><strong>Slide timers</strong><small>Configure each slide independently before presenting.</small></div><div id="slide-duration-list" class="slide-duration-list"></div>
+          </section>
+          <div class="setup-footer"><div class="deck-summary"><span class="deck-file-icon">P</span><div><strong id="setup-filename">Presentation.pptx</strong><small id="setup-slide-count">PowerPoint presentation</small></div></div><div class="setup-summary"><span id="setup-global-summary">Global timer · 05:00</span><span id="setup-slide-summary">0 slide timers</span></div><button class="start-button" id="start-presentation">Start presentation <span>→</span></button></div>
+        </div>
+      </section>
+
+      <section id="present-view" class="view present-view hidden">
+        <div class="presentation-stage" id="presentation-stage">
+          <div id="pptx-canvas" class="pptx-canvas"><div class="render-status"><span class="loading-spinner"></span><p>Preparing your slides…</p></div></div>
+          <div class="slide-shade"></div>
+          <div id="timer-overlay" class="timer-overlay top-right"><div class="timer-face"><span id="timer-display">05:00</span><span id="timer-state">READY</span></div><div id="timer-controls" class="timer-controls"><button id="pause-timer" aria-label="Pause timer">Ⅱ</button><button id="reset-timer" aria-label="Reset timer">↻</button><button id="hide-timer" aria-label="Hide timer">⊘</button></div></div>
+          <div id="presentation-hud" class="presentation-hud">
+            <div class="hud-left"><button id="exit-presentation" class="hud-button exit"><span>×</span> Exit</button><span class="hud-divider"></span><span id="deck-title" class="hud-deck-title">Presentation</span></div>
+            <div class="hud-center"><button id="prev-slide" class="hud-button" aria-label="Previous slide">←</button><span><strong id="current-slide">1</strong> <i>/</i> <span id="total-slides">—</span></span><button id="next-slide" class="hud-button" aria-label="Next slide">→</button></div>
+            <div class="hud-right"><button id="presenter-view-button" class="hud-button" aria-label="Toggle presenter view">▣ Presenter view</button><button id="show-timer" class="hud-button hidden" aria-label="Show timer">◷ Timer</button><button id="fullscreen-button" class="hud-button" aria-label="Enter fullscreen">⛶ Full screen</button></div>
+          </div>
+          <aside id="presenter-panel" class="presenter-panel hidden"><div class="panel-kicker">PRESENTER VIEW</div><h3 id="presenter-deck-name">Presentation</h3><div class="presenter-slides"><div><small>NOW</small><div id="presenter-current-preview" class="slide-preview"></div><b id="presenter-current-number">1</b></div><div><small>NEXT</small><div id="presenter-next-preview" class="slide-preview next-preview">Next slide</div></div></div><div class="presenter-metrics"><div><small>Elapsed</small><strong id="presenter-elapsed">00:00</strong></div><div><small>Remaining</small><strong id="presenter-remaining">05:00</strong></div></div><label class="display-select">Display target<select id="display-target"><option value="presentation">Presentation screen</option><option value="presenter">Presenter screen</option><option value="both">Both screens</option></select></label><button id="display-settings-button" class="panel-button">Display & window settings</button></aside>
+        </div>
+      </section>
+    </main>
+    <div id="toast" class="toast" role="status"></div>
+    <dialog id="import-dialog" class="preset-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">IMPORT FROM THE WEB</p><h2>Bring in your slides</h2></div><button class="dialog-close" value="cancel">×</button></div><p class="import-help">Paste a public Google Slides export or Canva presentation/download link. Google Slides links are converted to PPTX automatically. Canva must expose a downloadable PDF or PPTX.</p><label class="field-label">Presentation link<input id="presentation-url" class="duration-input" type="url" placeholder="https://docs.google.com/presentation/... or canva.com/..." required /></label><button type="button" class="primary-button" id="fetch-link-button">Fetch presentation</button></form></dialog>
+    <dialog id="preset-dialog" class="preset-dialog"><form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">REUSABLE CONFIGURATION</p><h2>Timer presets</h2></div><button class="dialog-close" value="cancel">×</button></div><div id="preset-list"></div><div class="preset-create"><input id="preset-name" placeholder="Preset name, e.g. 5 Minute Activity" /><button id="save-preset" type="button" class="primary-button">Save current settings</button></div></form></dialog>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
