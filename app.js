@@ -10,7 +10,7 @@ const auth = { user: localUser, signup: false };
 const defaults = { mode: "countdown", duration: 300, position: "top-right", theme: "minimal", opacity: 92, warnings: [1800, 600, 300, 60, 10, 5], warningSound: false, presenterView: false, alwaysOnTop: false, displayTarget: "presentation", timerDisplay: "both", autoAdvance: false, slideDurations: [] };
 const saved = (() => { try { return JSON.parse(localStorage.getItem("class-presenter-preferences") || "null"); } catch (error) { console.warn("Preferences could not be loaded", error); return null; } })();
 const state = {
-  presentation: null, config: { ...defaults, ...(saved || {}), warnings: Array.isArray(saved?.warnings) ? saved.warnings : defaults.warnings }, previewer: null, pdfDocument: null, slide: 1, session: null,
+  presentation: null, config: { ...defaults, ...(saved || {}), warnings: Array.isArray(saved?.warnings) ? saved.warnings : defaults.warnings }, previewer: null, pdfDocument: null, slide: 1, session: null, slideStartedAt: 0,
   timer: { startedAt: 0, pausedAt: 0, pausedTotal: 0, elapsedBeforePause: 0, running: false, paused: false, ended: false, warned: [] }, slideTimers: {}, hudTimeout: null, sort: "added", query: "",
 };
 const updateViewportProfile = () => {
@@ -80,10 +80,23 @@ const renderLibrary = async () => {
   const all = await db("presentations", "get");
   if (renderToken !== libraryRenderToken) return;
   const items = all.filter((item) => item.name.toLowerCase().includes(state.query.toLowerCase())).sort((a, b) => state.sort === "alphabetical" ? a.name.localeCompare(b.name) : state.sort === "presented" ? (b.lastPresented || 0) - (a.lastPresented || 0) : b.createdAt - a.createdAt);
-  $("#presentation-count").textContent = all.length; $("#empty-state").classList.toggle("hidden", all.length > 0); $("#library-grid").innerHTML = items.map((item, index) => { const safeName = escapeHtml(item.name); const title = escapeHtml(item.name.replace(/\.(pptx|pdf)$/i, "").slice(0, 25)); const type = item.type === "pdf" ? "PDF" : "PPTX"; const thumb = item.thumbnail ? `<img class="real-thumb" src="${item.thumbnail}" alt="First slide of ${safeName}" loading="lazy" />` : `<div class="thumb-fallback"><div class="thumb-text">${title}<small>CLASS PRESENTER</small></div></div>`; return `<article class="library-card"><div class="thumb">${thumb}<span class="thumb-count">${item.slideCount ? `${item.slideCount} slides` : type}</span></div><div class="card-info"><h3 title="${safeName}">${safeName}</h3><div class="card-meta"><span>${fileDate(item.createdAt)}</span><span>${item.lastPresented ? `Last ${fileDate(item.lastPresented)}` : "Not presented"}</span></div><div class="card-actions"><button class="open-card" data-open="${item.id}">Present</button><button class="settings-card" data-open="${item.id}">Settings</button><button class="delete-card" data-delete="${item.id}">Delete</button></div></div></article>`; }).join("");
+  $("#presentation-count").textContent = all.length; $("#empty-state").classList.toggle("hidden", all.length > 0); updateDashboardStats(); $("#library-grid").innerHTML = items.map((item, index) => { const safeName = escapeHtml(item.name); const title = escapeHtml(item.name.replace(/\.(pptx|pdf)$/i, "").slice(0, 25)); const type = item.type === "pdf" ? "PDF" : "PPTX"; const thumb = item.thumbnail ? `<img class="real-thumb" src="${item.thumbnail}" alt="First slide of ${safeName}" loading="lazy" />` : `<div class="thumb-fallback"><div class="thumb-text">${title}<small>CLASS PRESENTER</small></div></div>`; return `<article class="library-card"><div class="thumb">${thumb}<span class="thumb-count">${item.slideCount ? `${item.slideCount} slides` : type}</span></div><div class="card-info"><h3 title="${safeName}">${safeName}</h3><div class="card-meta"><span>${fileDate(item.createdAt)}</span><span>${item.lastPresented ? `Last ${fileDate(item.lastPresented)}` : "Not presented"}</span></div><div class="card-actions"><button class="open-card" data-open="${item.id}">Present</button><button class="settings-card" data-open="${item.id}">Settings</button><button class="delete-card" data-delete="${item.id}">Delete</button></div></div></article>`; }).join("");
   document.querySelectorAll("[data-open]").forEach((button) => button.addEventListener("click", () => openSetup(items.find((item) => item.id === button.dataset.open))));
   document.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", async () => { await db("presentations", "delete", button.dataset.delete); renderLibrary(); }));
 };
+
+const updateDashboardStats = async () => {
+  try {
+    const sessions = await db("sessions", "get");
+    const total = sessions.reduce((sum, s) => sum + Number(s.elapsed || 0), 0);
+    const completed = sessions.filter((s) => s.completed).length;
+    const focus = document.querySelector(".stats-row .stat-card:nth-child(2) strong");
+    const completion = document.querySelector(".stats-row .stat-card:nth-child(3) strong");
+    if (focus) focus.textContent = formatTime(total, total >= 3600);
+    if (completion) completion.textContent = sessions.length ? Math.round((completed / sessions.length) * 100) + "%" : "0%";
+  } catch (error) { console.warn("Dashboard analytics unavailable", error); }
+};
+
 const syncSetup = () => {
   const c = state.config; document.querySelectorAll(".mode-button").forEach((item) => item.classList.toggle("active", item.dataset.mode === c.mode));
   $("#countdown-options").classList.toggle("hidden", c.mode !== "countdown"); $("#countup-options").classList.toggle("hidden", c.mode !== "countup");
@@ -148,6 +161,16 @@ const startTimerTicker = () => {
 document.addEventListener("visibilitychange", () => { if (state.timer.running) { updateTimer(); startTimerTicker(); } });
 document.addEventListener("fullscreenchange", () => { updateViewportProfile(); if (state.presentation && !$("#present-view").classList.contains("hidden")) renderSlide(state.slide - 1); });
 
+
+const recordSlideTiming = () => {
+  if (!state.session || !state.slideStartedAt) return;
+  const elapsed = Math.max(0, (Date.now() - state.slideStartedAt) / 1000);
+  const key = String(state.slide);
+  state.session.slideTimings = state.session.slideTimings || {};
+  state.session.slideTimings[key] = Number(state.session.slideTimings[key] || 0) + elapsed;
+  state.slideStartedAt = Date.now();
+};
+
 const renderSlide = async (index) => {
   const total = state.presentation?.type === "pdf" ? state.pdfDocument?.numPages : state.previewer?.slideCount;
   if (!total) return;
@@ -158,13 +181,13 @@ const renderSlide = async (index) => {
     const canvas = document.createElement("canvas"); canvas.width = viewport.width; canvas.height = viewport.height; canvas.className = "pdf-slide";
     $("#pptx-canvas").replaceChildren(canvas); await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
   } else state.previewer.renderSingleSlide(safe);
-  state.slide = safe + 1; ensureSlideTimer(); $("#current-slide").textContent = state.slide; $("#total-slides").textContent = total; $("#presenter-current-number").textContent = state.slide; $("#presenter-current-preview").textContent = `Slide ${state.slide}`; $("#presenter-next-preview").textContent = state.slide < total ? `Slide ${state.slide + 1}` : "End of presentation"; updateTimer();
+  if (state.slide !== safe + 1) recordSlideTiming(); state.slide = safe + 1; state.slideStartedAt = Date.now(); ensureSlideTimer(); $("#current-slide").textContent = state.slide; $("#total-slides").textContent = total; $("#presenter-current-number").textContent = state.slide; $("#presenter-current-preview").textContent = `Slide ${state.slide}`; $("#presenter-next-preview").textContent = state.slide < total ? `Slide ${state.slide + 1}` : "End of presentation"; updateTimer();
 };
 const startPresentation = async () => {
   const duration = state.config.mode === "countdown" ? parseDuration() : 0;
   if (state.config.mode === "countdown" && (!duration || duration <= 0)) return showToast("Enter a duration greater than zero.");
   state.config.duration = duration; if (!Array.isArray(state.config.slideDurations) || state.config.slideDurations.length !== (state.presentation.slideCount || 0)) state.config.slideDurations = Array.from({ length: state.presentation.slideCount || 1 }, () => 0); persistPreferences(); if (state.config.alwaysOnTop) showToast("Always on Top activates in the desktop wrapper."); state.slideTimers = {}; state.timer = { startedAt: Date.now(), pausedAt: 0, pausedTotal: 0, elapsedBeforePause: 0, running: true, paused: false, ended: false, warned: [] }; startTimerTicker();
-  state.session = { id: crypto.randomUUID(), presentationId: state.presentation.id, startTime: Date.now(), mode: state.config.mode, duration, completed: false };
+  state.session = { id: crypto.randomUUID(), presentationId: state.presentation.id, startTime: Date.now(), mode: state.config.mode, duration, completed: false, slideTimings: {} }; state.slideStartedAt = Date.now();
   await db("sessions", "put", state.session); state.presentation.lastPresented = Date.now(); await db("presentations", "put", state.presentation);
   $("#deck-title").textContent = state.presentation.name; $("#presenter-deck-name").textContent = state.presentation.name; $("#timer-overlay").className = `timer-overlay ${state.config.position}`; $("#pptx-canvas").innerHTML = '<div class="render-status"><span class="loading-spinner"></span><p>Preparing your slides…</p></div>'; $("#presenter-panel").classList.toggle("hidden", !state.config.presenterView); showView("present-view"); updateTimer();
   try {
@@ -213,7 +236,7 @@ const savePresentation = async (item) => {
   } catch (error) { console.warn("Slide count unavailable", error); }
   await db("presentations", "put", record); await renderLibrary();
 };
-const endSession = async () => { const times = currentTimes(); state.timer.running = false; if (state.session) { state.session.endTime = Date.now(); state.session.elapsed = times.elapsed; state.session.completed = state.timer.ended; await db("sessions", "put", state.session); } showView("setup-view"); showToast(`Session ended · ${formatTime(times.elapsed)} presented`); };
+const endSession = async () => { const times = currentTimes(); state.timer.running = false; recordSlideTiming(); if (state.session) { state.session.endTime = Date.now(); state.session.elapsed = times.elapsed; state.session.completed = state.timer.ended; await db("sessions", "put", state.session); } showView("setup-view"); showToast(`Session ended · ${formatTime(times.elapsed)} presented`); };
 
 
 const generateFirstSlideThumbnail = async (record) => {
@@ -272,7 +295,8 @@ const showAnalytics = async () => {
     const name = escapeHtml((names.get(s.presentationId) || "Presentation").replace(/\.(pptx|pdf)$/i, ""));
     return `<div class="analytics-row"><div><strong>${name}</strong><small>${fileDate(s.startTime)} · ${s.mode}</small></div><b>${formatTime(s.elapsed || 0, (s.elapsed || 0) >= 3600)}</b><span>${s.completed ? "Completed" : "Ended early"}</span></div>`;
   }).join("");
-  dialog.innerHTML = `<form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">PRESENTATION INSIGHTS</p><h2>Session analytics</h2></div><button class="dialog-close" value="cancel">×</button></div><div class="analytics-summary"><div><strong>${sessions.length}</strong><small>Sessions</small></div><div><strong>${formatTime(totalSeconds, totalSeconds >= 3600)}</strong><small>Total focus time</small></div><div><strong>${formatTime(average, average >= 3600)}</strong><small>Average session</small></div><div><strong>${completed}</strong><small>Completed</small></div></div><div class="analytics-list">${rows || '<div class="analytics-empty">No presentation sessions yet. Start a presentation to build your history.</div>'}</div></form>`;
+  const timingRows = sessions.slice(0, 8).flatMap((s) => Object.entries(s.slideTimings || {}).map(([slide, seconds]) => ({ name: names.get(s.presentationId) || "Presentation", slide, seconds }))).sort((a, b) => b.seconds - a.seconds).slice(0, 10).map((item) => `<div class="analytics-row"><div><strong>${escapeHtml(item.name.replace(/\.(pptx|pdf)$/i, ""))}</strong><small>Slide ${item.slide} · time spent</small></div><b>${formatTime(item.seconds, item.seconds >= 3600)}</b><span>Slide timing</span></div>`).join("");
+  dialog.innerHTML = `<form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">PRESENTATION INSIGHTS</p><h2>Session analytics</h2></div><button class="dialog-close" value="cancel">×</button></div><div class="analytics-summary"><div><strong>${sessions.length}</strong><small>Sessions</small></div><div><strong>${formatTime(totalSeconds, totalSeconds >= 3600)}</strong><small>Total focus time</small></div><div><strong>${formatTime(average, average >= 3600)}</strong><small>Average session</small></div><div><strong>${completed}</strong><small>Completed</small></div></div><h3 class="analytics-section-title">Recent sessions</h3><div class="analytics-list">${rows || '<div class="analytics-empty">No presentation sessions yet. Start a presentation to build your history.</div>'}</div><h3 class="analytics-section-title">Slide timing</h3><div class="analytics-list">${timingRows || '<div class="analytics-empty">Slide timing will appear after your next presentation.</div>'}</div></form>`;
   dialog.showModal();
 };
 
