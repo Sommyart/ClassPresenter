@@ -80,7 +80,7 @@ const renderLibrary = async () => {
   const all = await db("presentations", "get");
   if (renderToken !== libraryRenderToken) return;
   const items = all.filter((item) => item.name.toLowerCase().includes(state.query.toLowerCase())).sort((a, b) => state.sort === "alphabetical" ? a.name.localeCompare(b.name) : state.sort === "presented" ? (b.lastPresented || 0) - (a.lastPresented || 0) : b.createdAt - a.createdAt);
-  $("#presentation-count").textContent = all.length; $("#empty-state").classList.toggle("hidden", all.length > 0); $("#library-grid").innerHTML = items.map((item, index) => { const safeName = escapeHtml(item.name); const title = escapeHtml(item.name.replace(/\.(pptx|pdf)$/i, "").slice(0, 25)); const type = item.type === "pdf" ? "PDF" : "PPTX"; return `<article class="library-card"><div class="thumb" style="background:linear-gradient(135deg,${index % 2 ? "#213b51,#4f9b9a" : "#252d49,#6d63c5"})"><div class="thumb-text">${title}<small>CLASS PRESENTER</small></div><span class="thumb-count">${item.slideCount ? `${item.slideCount} slides` : type}</span></div><div class="card-info"><h3 title="${safeName}">${safeName}</h3><div class="card-meta"><span>${fileDate(item.createdAt)}</span><span>${item.lastPresented ? `Last ${fileDate(item.lastPresented)}` : "Not presented"}</span></div><div class="card-actions"><button class="open-card" data-open="${item.id}">Present</button><button class="settings-card" data-open="${item.id}">Settings</button><button class="delete-card" data-delete="${item.id}">Delete</button></div></div></article>`; }).join("");
+  $("#presentation-count").textContent = all.length; $("#empty-state").classList.toggle("hidden", all.length > 0); $("#library-grid").innerHTML = items.map((item, index) => { const safeName = escapeHtml(item.name); const title = escapeHtml(item.name.replace(/\.(pptx|pdf)$/i, "").slice(0, 25)); const type = item.type === "pdf" ? "PDF" : "PPTX"; const thumb = item.thumbnail ? `<img class="real-thumb" src="${item.thumbnail}" alt="First slide of ${safeName}" loading="lazy" />` : `<div class="thumb-fallback"><div class="thumb-text">${title}<small>CLASS PRESENTER</small></div></div>`; return `<article class="library-card"><div class="thumb">${thumb}<span class="thumb-count">${item.slideCount ? `${item.slideCount} slides` : type}</span></div><div class="card-info"><h3 title="${safeName}">${safeName}</h3><div class="card-meta"><span>${fileDate(item.createdAt)}</span><span>${item.lastPresented ? `Last ${fileDate(item.lastPresented)}` : "Not presented"}</span></div><div class="card-actions"><button class="open-card" data-open="${item.id}">Present</button><button class="settings-card" data-open="${item.id}">Settings</button><button class="delete-card" data-delete="${item.id}">Delete</button></div></div></article>`; }).join("");
   document.querySelectorAll("[data-open]").forEach((button) => button.addEventListener("click", () => openSetup(items.find((item) => item.id === button.dataset.open))));
   document.querySelectorAll("[data-delete]").forEach((button) => button.addEventListener("click", async () => { await db("presentations", "delete", button.dataset.delete); renderLibrary(); }));
 };
@@ -206,7 +206,7 @@ const importFromUrl = async () => {
   } catch (error) { showToast(error.message || "Could not fetch that presentation link."); } finally { $("#fetch-link-button").disabled = false; $("#fetch-link-button").textContent = "Fetch presentation"; }
 };
 const savePresentation = async (item) => {
-  const record = { id: crypto.randomUUID(), name: item.name, createdAt: Date.now(), data: item.data, type: item.type, slideCount: null };
+  const record = { id: crypto.randomUUID(), name: item.name, createdAt: Date.now(), data: item.data, type: item.type, slideCount: null, thumbnail: null };
   try {
     if (record.type === "pdf") record.slideCount = (await getDocument({ data: record.data.slice(0) }).promise).numPages;
     else { const host = document.createElement("div"); host.hidden = true; document.body.append(host); const parser = createPptxPreviewer(host, { width: 1280, height: 720, mode: "slide" }); await parser.preview(record.data.slice(0)); record.slideCount = parser.slideCount; parser.destroy(); host.remove(); }
@@ -214,6 +214,75 @@ const savePresentation = async (item) => {
   await db("presentations", "put", record); await renderLibrary();
 };
 const endSession = async () => { const times = currentTimes(); state.timer.running = false; if (state.session) { state.session.endTime = Date.now(); state.session.elapsed = times.elapsed; state.session.completed = state.timer.ended; await db("sessions", "put", state.session); } showView("setup-view"); showToast(`Session ended · ${formatTime(times.elapsed)} presented`); };
+
+
+const generateFirstSlideThumbnail = async (record) => {
+  if (record.type === "pdf") {
+    const doc = await getDocument({ data: record.data.slice(0) }).promise;
+    const page = await doc.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(480 / base.width, 270 / base.height);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(viewport.width));
+    canvas.height = Math.max(1, Math.round(viewport.height));
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    return canvas.toDataURL("image/jpeg", 0.78);
+  }
+  const host = document.createElement("div");
+  host.style.cssText = "position:fixed;left:-10000px;top:-10000px;width:480px;height:270px;overflow:hidden;pointer-events:none";
+  document.body.append(host);
+  const parser = createPptxPreviewer(host, { width: 480, height: 270, mode: "slide" });
+  await parser.preview(record.data.slice(0));
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  const canvas = host.querySelector("canvas");
+  const result = canvas && canvas.width ? canvas.toDataURL("image/jpeg", 0.78) : null;
+  parser.destroy();
+  host.remove();
+  return result;
+};
+
+const backfillThumbnails = async () => {
+  const items = await db("presentations", "get");
+  for (const item of items) {
+    if (item.thumbnail) continue;
+    try {
+      item.thumbnail = await generateFirstSlideThumbnail(item);
+      if (item.thumbnail) await db("presentations", "put", item);
+    } catch (error) { console.warn("Thumbnail backfill skipped", error); }
+  }
+  renderLibrary();
+};
+
+const showAnalytics = async () => {
+  const sessions = (await db("sessions", "get")).sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+  const presentations = await db("presentations", "get");
+  const names = new Map(presentations.map((p) => [p.id, p.name]));
+  const totalSeconds = sessions.reduce((sum, s) => sum + Number(s.elapsed || 0), 0);
+  const average = sessions.length ? totalSeconds / sessions.length : 0;
+  const completed = sessions.filter((s) => s.completed).length;
+  let dialog = $("#analytics-dialog");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "analytics-dialog";
+    dialog.className = "preset-dialog analytics-dialog";
+    document.body.append(dialog);
+  }
+  const rows = sessions.slice(0, 12).map((s) => {
+    const name = escapeHtml((names.get(s.presentationId) || "Presentation").replace(/\.(pptx|pdf)$/i, ""));
+    return `<div class="analytics-row"><div><strong>${name}</strong><small>${fileDate(s.startTime)} · ${s.mode}</small></div><b>${formatTime(s.elapsed || 0, (s.elapsed || 0) >= 3600)}</b><span>${s.completed ? "Completed" : "Ended early"}</span></div>`;
+  }).join("");
+  dialog.innerHTML = `<form method="dialog"><div class="dialog-heading"><div><p class="eyebrow">PRESENTATION INSIGHTS</p><h2>Session analytics</h2></div><button class="dialog-close" value="cancel">×</button></div><div class="analytics-summary"><div><strong>${sessions.length}</strong><small>Sessions</small></div><div><strong>${formatTime(totalSeconds, totalSeconds >= 3600)}</strong><small>Total focus time</small></div><div><strong>${formatTime(average, average >= 3600)}</strong><small>Average session</small></div><div><strong>${completed}</strong><small>Completed</small></div></div><div class="analytics-list">${rows || '<div class="analytics-empty">No presentation sessions yet. Start a presentation to build your history.</div>'}</div></form>`;
+  dialog.showModal();
+};
+
+const analyticsButton = document.createElement("button");
+analyticsButton.id = "analytics-button";
+analyticsButton.className = "text-button analytics-button";
+analyticsButton.textContent = "Session analytics";
+analyticsButton.addEventListener("click", showAnalytics);
+$(".library-tools")?.append(analyticsButton);
+backfillThumbnails().catch((error) => console.warn("Thumbnail backfill failed", error));
 
 const upload = async (file) => {
   if (!file) return; if (!/\.(pptx|pdf)$/i.test(file.name)) return showToast("Please choose a .pptx or PDF presentation.");
